@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Common.Logging;
+using Quartz.Logging;
 
 namespace Quartz.Util
 {
     public static class TimeZoneUtil
     {
-        private static readonly ILog logger = LogManager.GetLogger(typeof (TimeZoneUtil));
+        private static readonly ILog logger = LogProvider.GetLogger(typeof (TimeZoneUtil));
         private static readonly Dictionary<string, string> timeZoneIdAliases = new Dictionary<string, string>();
 
         static TimeZoneUtil()
@@ -43,6 +43,10 @@ namespace Quartz.Util
 
             timeZoneIdAliases["Hawaiian Standard Time"] = "US/Hawaii";
             timeZoneIdAliases["US/Hawaii"] = "Hawaiian Standard Time";
+
+            timeZoneIdAliases["China Standard Time"] = "Asia/Beijing";
+            timeZoneIdAliases["Asia/Shanghai"] = "China Standard Time";
+            timeZoneIdAliases["Asia/Beijing"] = "China Standard Time";
         }
 
         /// <summary>
@@ -55,7 +59,7 @@ namespace Quartz.Util
         {
             if (QuartzEnvironment.IsRunningOnMono)
             {
-                return TimeZoneInfo.ConvertTimeFromUtc(dateTimeOffset.UtcDateTime, timeZoneInfo);
+                return TimeZoneInfo.ConvertTime(dateTimeOffset.UtcDateTime, TimeZoneInfo.Utc, timeZoneInfo);
             }
 
             return TimeZoneInfo.ConvertTime(dateTimeOffset, timeZoneInfo);
@@ -89,7 +93,11 @@ namespace Quartz.Util
             {
                 info = TimeZoneInfo.FindSystemTimeZoneById(id);
             }
+#if !BUG_7552 // https://github.com/dotnet/corefx/issues/7552
             catch (TimeZoneNotFoundException)
+#else // !BUG_7552
+            catch (Exception)
+#endif // !BUG_7552
             {
                 string aliasedId;
                 if (timeZoneIdAliases.TryGetValue(id, out aliasedId))

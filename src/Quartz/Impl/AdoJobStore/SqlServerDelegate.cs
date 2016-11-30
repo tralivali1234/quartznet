@@ -1,4 +1,5 @@
 #region License
+
 /* 
  * Copyright 2009- Marko Lahma
  * 
@@ -15,10 +16,11 @@
  * under the License.
  * 
  */
+
 #endregion
 
 using System;
-using System.Data;
+using System.Data.Common;
 
 namespace Quartz.Impl.AdoJobStore
 {
@@ -43,7 +45,21 @@ namespace Quartz.Impl.AdoJobStore
             return sqlSelectNextTriggerToAcquire;
         }
 
-        public override void AddCommandParameter(IDbCommand cmd, string paramName, object paramValue, Enum dataType)
+        protected override string GetSelectNextMisfiredTriggersInStateToAcquireSql(int count)
+        {
+            if (count != -1)
+            {
+                var sqlSelectHasMisfiredTriggersInState = SqlSelectHasMisfiredTriggersInState;
+
+                // add limit clause to correct place
+                sqlSelectHasMisfiredTriggersInState = "SELECT TOP " + count + " " + sqlSelectHasMisfiredTriggersInState.Substring(6);
+
+                return sqlSelectHasMisfiredTriggersInState;
+            }
+            return base.GetSelectNextMisfiredTriggersInStateToAcquireSql(count);
+        }
+
+        public override void AddCommandParameter(DbCommand cmd, string paramName, object paramValue, Enum dataType)
         {
             // deeded for SQL Server CE
             if (paramValue is bool && dataType == default(Enum))

@@ -49,6 +49,11 @@ namespace Quartz
     /// of merging the contents of the trigger's JobDataMap (if any) over the
     /// Job's JobDataMap (if any).  
     /// </para>
+    /// <para>
+    /// Update since 2.4.2 - We keep an dirty flag for this map so that whenever you modify(add/delete) any of the entries,
+    /// it will set to "true". However if you create new instance using an exising map with constructor, then
+    /// the dirty flag will NOT be set to "true" until you modify the instance.
+    /// </para>
     /// </remarks>
     /// <seealso cref="IJob" />
     /// <seealso cref="PersistJobDataAfterExecutionAttribute" />
@@ -56,7 +61,9 @@ namespace Quartz
     /// <seealso cref="IJobExecutionContext" />
     /// <author>James House</author>
     /// <author>Marko Lahma (.NET)</author>
+#if BINARY_SERIALIZATION
     [Serializable]
+#endif // BINARY_SERIALIZATION
     public class JobDataMap : StringKeyDirtyFlagMap
     {
         /// <summary>
@@ -72,6 +79,10 @@ namespace Quartz
         public JobDataMap(IDictionary<string, object> map) : this()
         {
             PutAll(map);
+
+            // When constructing a new data map from another existing map, we should NOT mark dirty flag as true
+            // Use case: loading JobDataMap from DB
+            ClearDirtyFlag();
         }
 
         /// <summary> 
@@ -83,8 +94,13 @@ namespace Quartz
             {
                 Put((string) entry.Key, entry.Value);
             }
+
+            // When constructing a new data map from another existing map, we should NOT mark dirty flag as true
+            // Use case: loading JobDataMap from DB
+            ClearDirtyFlag();
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serialization constructor.
         /// </summary>
@@ -93,6 +109,7 @@ namespace Quartz
         protected JobDataMap(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Adds the given <see cref="bool" /> value as a string version to the
@@ -111,7 +128,7 @@ namespace Quartz
         /// </summary>
         public virtual void PutAsString(string key, char value)
         {
-            string strValue = value.ToString(CultureInfo.InvariantCulture);
+            string strValue = value.ToString();
             base.Put(key, strValue);
         }
 
@@ -194,7 +211,7 @@ namespace Quartz
         public virtual int GetIntValueFromString(string key)
         {
             object obj = Get(key);
-            return Int32.Parse((string) obj, CultureInfo.InvariantCulture);
+            return int.Parse((string) obj, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -219,7 +236,7 @@ namespace Quartz
         {
             object obj = Get(key);
 
-            return ((string) obj).ToUpper(CultureInfo.InvariantCulture).Equals("TRUE");
+            return CultureInfo.InvariantCulture.TextInfo.ToUpper((string) obj).Equals("TRUE");
         }
 
         /// <summary>
@@ -254,7 +271,7 @@ namespace Quartz
         public virtual double GetDoubleValueFromString(string key)
         {
             object obj = Get(key);
-            return Double.Parse((string) obj, CultureInfo.InvariantCulture);
+            return double.Parse((string) obj, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -278,7 +295,7 @@ namespace Quartz
         public virtual float GetFloatValueFromString(string key)
         {
             object obj = Get(key);
-            return Single.Parse((string) obj, CultureInfo.InvariantCulture);
+            return float.Parse((string) obj, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -302,7 +319,7 @@ namespace Quartz
         public virtual long GetLongValueFromString(string key)
         {
             object obj = Get(key);
-            return Int64.Parse((string) obj, CultureInfo.InvariantCulture);
+            return long.Parse((string) obj, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -329,11 +346,7 @@ namespace Quartz
         public virtual TimeSpan GetTimeSpanValueFromString(string key)
         {
             object obj = Get(key);
-#if NET_40
             return TimeSpan.Parse((string) obj, CultureInfo.InvariantCulture);
-#else
-            return TimeSpan.Parse((string) obj);
-#endif
         }
 
         /// <summary>

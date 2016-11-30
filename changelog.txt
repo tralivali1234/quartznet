@@ -2,6 +2,76 @@ QUARTZ.NET CHANGELOG
 ==============================
 http://www.quartz-scheduler.net
 
+Release 3.0 alpha 3, XXX XX 2016
+--------------------------------
+
+FIXES
+
+* fix PosgreSQL db provider configuration for .NET Core
+
+BREAKING CHANGES
+
+* 
+
+
+Release 3.0 alpha 2, Aug 24 2016
+--------------------------------
+
+FIXES
+
+* fix scheduler signaling not working with AdoJobStore due to thread local storage
+* thread local state removed altogether
+* quartz.serializer.type was required even though non-serializing RAMJobStore was in use
+* JSON serialization incorrectly called serialization callbacks
+
+BREAKING CHANGES
+
+* IStatefulJob was removed, been obsolete since 2.x
+* ISemaphore interface now passes Guid requestorId that defines lock owner instead of implicit thread name
+
+
+Release 3.0 alpha 1, Aug 16 2016
+--------------------------------
+
+NEW FEATURE
+
+* Task based jobs with async/await support
+* Support .NET Core
+
+BREAKING CHANGES
+
+* .NET 4.5/netstandard1.3 required
+* Scheduler methods have been changed to be Task based, remember to await them
+* IJob interface now returns a task
+* Some IList properties have been changed to IReadOnlyList to properly reflect intent
+* SQL Server CE support has been dropped
+* DailyCalendar uses now datetimes for excluded dates and has ISet interface to access them
+* IObjectSerializer has new method, void Initialize(), that has to be implemented
+
+KNOWN ISSUES
+
+* Issues with time zone ids between Windows and Linux, they use different ids for the same zone
+* No remoting support
+
+
+Release 2.4, Aug 18, 2016
+--------------------------------
+
+Only minor changes and fixes but dependency updates which merits for a minor version upgrade.
+This version changes HolidayCalendar serialization not to depend on C5 library.
+Quartz v3 can only handle HolidayCalendars serialized in this 2.4 binary format.
+
+NEW FEATURE
+
+* Add SQL limit support for MySQLDelegate
+* Removed dbFailureRetryInterval since it is no longer used 
+* Update Common Logging to v3.3.1 
+
+FIXES
+
+* Batch acquisition can cause early firing of triggers
+* Should not rely on C5.TreeSet<T> on HolidayCalendar field serialization
+
 Release 2.3.3, Jul 9, 2015
 --------------------------------
 
